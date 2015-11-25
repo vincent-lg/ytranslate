@@ -90,6 +90,7 @@ class Catalog:
     def __init__(self, name):
         self.name = name
         self.messages = {}
+        self.nested = {}
         self.catalogs = []
 
     def __repr__(self):
@@ -98,6 +99,7 @@ class Catalog:
     def read_dictionary(self, dictionary, parent=""):
         """Read a namespace defined in a dictionary."""
         for name, entry in dictionary.items():
+            name = str(name)
             if parent:
                 name = parent + "." + name
 
@@ -142,6 +144,8 @@ class Catalog:
 
         if isinstance(data, dict):
             self.read_dictionary(data)
+            self.nested.clear()
+            self.nested.update(self.write_dictionary())
         else:
             raise ValueError("the YAML content doesn't describe a dictionary")
 
@@ -206,8 +210,39 @@ class Catalog:
 
         """
         message = self.messages.get(address)
-        if message is None:
+        if count is None and message is None:
             raise ValueError("address {} cannot be found in this " \
                     "catalog".format(repr(address)))
+
+        if count is not None:
+            equal = lambda a, b: a == b
+            greater = lambda a, b: a >= b
+            messages = self.nested.get(address, {})
+            if messages is None:
+                raise ValueError("address {} cannot be found in this " \
+                        "catalog".format(repr(address)))
+            elif not isinstance(messages, dict):
+                raise ValueError("the message at {} has to be " \
+                        "retrieved with a 'count' indicator, though " \
+                        "at this address aren't several values".format(
+                        repr(address)))
+
+            message = None
+            for key in sorted(messages.keys(), reverse=True):
+                value = messages[key]
+                compare = equal
+                if key.endswith("+"):
+                    key = key[:-1]
+                    compare = greater
+
+                key = int(key)
+                if compare(count, key):
+                    message = value
+                    break
+
+            if message is None:
+                raise ValueError("address {}: no proper message " \
+                        "to be displayed with a count of {}".format(
+                        repr(address), count))
 
         return message.format(count=count, **kwargs)

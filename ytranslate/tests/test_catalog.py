@@ -42,6 +42,14 @@ connection:
     error: Connexion impossible
 """.strip()
 
+PLURAL_DOC = """
+emails:
+    0: You have no email
+    1: Well, you have one email
+    2+: You only have {count} emails
+    5+: Wow, you have {count} emails
+""".strip()
+
 class TestCatalog(unittest.TestCase):
 
     """Unittest for the Catalog class.
@@ -91,3 +99,19 @@ class TestCatalog(unittest.TestCase):
                 "Connexion impossible")
         self.assertEqual(catalog.retrieve("greeting", name="Jeanne"),
                 "Bienvenue, Jeanne !")
+
+    def test_retrieve_plural(self):
+        """Test to retrieve the proper message using count indicators."""
+        catalog = Catalog("test")
+        catalog.read_YAML(PLURAL_DOC)
+        self.assertEqual(catalog.retrieve("emails", 0), "You have no email")
+        self.assertEqual(catalog.retrieve("emails", 1),
+                "Well, you have one email")
+        self.assertEqual(catalog.retrieve("emails", 2),
+                "You only have 2 emails")
+        self.assertEqual(catalog.retrieve("emails", 3),
+                "You only have 3 emails")
+        self.assertEqual(catalog.retrieve("emails", 5),
+                "Wow, you have 5 emails")
+        self.assertEqual(catalog.retrieve("emails", 6),
+                "Wow, you have 6 emails")
