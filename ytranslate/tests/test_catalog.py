@@ -35,6 +35,7 @@ SIMPLE_DOC = """
 file: Fichier
 edit: Édition
 view: Affichage
+greeting: Bienvenue, {name} !
 connection:
     connected: Connecté
     connecting: Connexion en cours
@@ -58,6 +59,7 @@ class TestCatalog(unittest.TestCase):
             'file': u'Fichier',
             'edit': u'Édition',
             'view': u'Affichage',
+            'greeting': 'Bienvenue, {name} !',
             'connection.connected': u'Connecté',
             'connection.connecting': u'Connexion en cours',
             'connection.error': u'Connexion impossible',
@@ -72,10 +74,20 @@ class TestCatalog(unittest.TestCase):
             'file': u'Fichier',
             'edit': u'Édition',
             'view': u'Affichage',
+            'greeting': 'Bienvenue, {name} !',
             'connection': {
                 'connected': u'Connecté',
                 'connecting': u'Connexion en cours',
                 'error': u'Connexion impossible',
             },
         })
-        print catalog.write_YAML()
+
+    def test_retrieve(self):
+        """Test to retrieve the proper message from a catalog."""
+        catalog = Catalog("test")
+        catalog.read_YAML(SIMPLE_DOC)
+        self.assertEqual(catalog.retrieve("view"), "Affichage")
+        self.assertEqual(catalog.retrieve("connection.error"),
+                "Connexion impossible")
+        self.assertEqual(catalog.retrieve("greeting", name="Jeanne"),
+                "Bienvenue, Jeanne !")

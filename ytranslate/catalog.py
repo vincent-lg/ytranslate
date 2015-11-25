@@ -180,3 +180,34 @@ class Catalog:
         nested = self.write_dictionary()
         return yaml.safe_dump(nested, indent=4, width=79,
                 default_flow_style=False)
+
+    def retrieve(self, address, count=None, **kwargs):
+        """Retrieve the message using the specified address.
+
+        The address is a string of namespaces separated by '.'.
+        For instance, "ui.greeting.user".  This address must match
+        both the directory/file structure and the internal catalog
+        structure.
+
+        It is possible to specify placeholders in the message.  For
+        instance, let's say you have a message defined like this
+        in your YAML catalog:
+            greeting: Hello, {name}!
+
+        In the call to 'retrieve', you will be able to specify
+        the name:
+            message = catalog.retrieve("greeting", name="John")
+            # message will contain "Hello, John!"
+
+        You can also alter the message depending on a number
+        (singular and plural in English, or a more specific variation
+        in Russian, for instance).  It still remains to be implemented
+        to this day, however.
+
+        """
+        message = self.messages.get(address)
+        if message is None:
+            raise ValueError("address {} cannot be found in this " \
+                    "catalog".format(repr(address)))
+
+        return message.format(count=count, **kwargs)
