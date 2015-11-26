@@ -29,17 +29,13 @@
 
 """Module containing the CatalogsCommand class, described below."""
 
+from __future__ import print_function
 import os
 import os.path
 import sys
 
 from ytranslate.commands.base import BaseCommand
 from ytranslate.fsloader import FSLoader
-
-try:
-    unicode
-except NameError:
-    unicode = str
 
 class CatalogsCommand(BaseCommand):
 
@@ -62,11 +58,12 @@ class CatalogsCommand(BaseCommand):
         """Execute the command."""
         root_dir = args.directory
         if not os.path.exists(root_dir):
-            print("The {} directory doesn't exist".format(repr(root_dir)))
+            print("The {} directory doesn't exist".format(repr(root_dir)),
+                    file=sys.stderr)
             sys.exit(1)
         elif not os.path.isdir(root_dir):
             print("The {} path doesn't lead to a directory".format(
-                    repr(root_dir)))
+                    repr(root_dir)), file=sys.stderr)
             sys.exit(1)
 
         loader = FSLoader(root_dir)
@@ -76,25 +73,27 @@ class CatalogsCommand(BaseCommand):
         elif loader.catalogs:
             self.display_catalogs(loader)
         else:
-            print("No catalog could be found in {}".format(repr(root_dir)))
+            print("No catalog could be found in {}".format(repr(root_dir)),
+                    file=sys.stderr)
 
-    def display_catalog(self, loader, catalog):
+    def display_catalog(self, loader, namespace):
         """Display the content of a catalog."""
-        catalog = loader.catalogs.get(catalog)
+        catalog = loader.catalogs.get(namespace)
         if catalog is None:
             print("The catalog of namespace {} cannot be found in " \
-                    "{}".format(repr(catalog), repr(root_dir)))
+                    "{}".format(repr(namespace), repr(loader.root_dir)),
+                    file=sys.stderr)
             sys.exit(1)
 
         for address, message in sorted(catalog.messages.items()):
             if isinstance(message, dict):
-                display = unicode("")
+                display = u""
                 for entry, value in sorted(message.items()):
-                    display += unicode("\n        {}: {}").format(
+                    display += u"\n        {}: {}".format(
                             entry, value)
-                message = unicode("{") + display + unicode("\n  }")
+                message = u"{" + display + u"\n  }"
 
-            print(unicode("  {}: {}").format(address, message))
+            print(u"  {}: {}".format(address, message))
 
     def display_catalogs(self, loader):
         """Display the loaded catalogs."""

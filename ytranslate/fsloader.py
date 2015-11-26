@@ -69,7 +69,12 @@ class FSLoader(Loader):
                     if sys.version_info.major == 3:
                         kwargs["encoding"] = "utf-8"
 
-                    with open(fullname, "r", **kwargs) as file:
+                    try:
+                        file = open(fullname, "r", **kwargs)
+                    except IOError as e:
+                        raise ValueError("cannot load the {} file: " \
+                                "{}".format(repr(fullname), e))
+                    else:
                         data = file.read()
 
                     namespace = ".".join(fullname[:-4].split(
