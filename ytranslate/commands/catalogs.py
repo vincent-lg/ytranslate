@@ -31,11 +31,15 @@
 
 import os
 import os.path
-from pprint import pprint
 import sys
 
 from ytranslate.commands.base import BaseCommand
 from ytranslate.fsloader import FSLoader
+
+try:
+    unicode
+except NameError:
+    unicode = str
 
 class CatalogsCommand(BaseCommand):
 
@@ -74,7 +78,15 @@ class CatalogsCommand(BaseCommand):
                         "{}".format(repr(catalog), repr(root_dir)))
                 sys.exit(1)
 
-            pprint(catalog.messages)
+            for address, message in sorted(catalog.messages.items()):
+                if isinstance(message, dict):
+                    display = unicode("")
+                    for entry, value in sorted(message.items()):
+                        display += unicode("\n        {}: {}").format(
+                                entry, value)
+                    message = unicode("{") + display + unicode("\n  }")
+
+                print(unicode("  {}: {}").format(address, message))
         elif loader.catalogs:
             for namespace, catalog in sorted(loader.catalogs.items()):
                 print("  Catalog {} ({} messages)".format(namespace,
