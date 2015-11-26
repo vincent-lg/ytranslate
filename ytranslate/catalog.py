@@ -90,7 +90,6 @@ class Catalog:
     def __init__(self, name):
         self.name = name
         self.messages = {}
-        self.nested = {}
         self.catalogs = []
 
     def __repr__(self):
@@ -104,7 +103,14 @@ class Catalog:
                 name = parent + "." + name
 
             if isinstance(entry, dict):
-                self.read_dictionary(entry, parent=name)
+                if all(str(key).rstrip("+").isdigit() for key in entry):
+                    copied = {}
+                    for key, value in entry.items():
+                        copied[str(key)] = unicode(value)
+
+                    self.messages[name] = copied
+                else:
+                    self.read_dictionary(entry, parent=name)
             else:
                 self.messages[name] = unicode(entry)
 
@@ -144,10 +150,21 @@ class Catalog:
 
         if isinstance(data, dict):
             self.read_dictionary(data)
-            self.nested.clear()
-            self.nested.update(self.write_dictionary())
         else:
             raise ValueError("the YAML content doesn't describe a dictionary")
+
+    def copy_from(self, catalog, namespace=""):
+        """Copy the messages of the catalog provided as a parameter.
+
+        The 'namespace' parameter can create sub-namespaces for
+        a whole catalog.
+
+        """
+        for name, message in catalog.messages.items():
+            if namespace:
+                name = namespace + "." + name
+
+            self.messages[name] = message
 
     def write_dictionary(self):
         """Write the nested dictionary.
@@ -217,7 +234,7 @@ class Catalog:
         if count is not None:
             equal = lambda a, b: a == b
             greater = lambda a, b: a >= b
-            messages = self.nested.get(address, {})
+            messages = self.messages.get(address, {})
             if messages is None:
                 raise ValueError("address {} cannot be found in this " \
                         "catalog".format(repr(address)))
@@ -234,6 +251,10 @@ class Catalog:
                 if key.endswith("+"):
                     key = key[:-1]
                     compare = greater
+
+                if not key.isdigit():
+                    raise ValueError("message {}: {} isn't a valid " \
+                            "number.".format(repr(address), key))
 
                 key = int(key)
                 if compare(count, key):
