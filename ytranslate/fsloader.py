@@ -34,8 +34,9 @@ import os.path
 import sys
 
 from ytranslate.catalog import Catalog
+from ytranslate.loader import Loader
 
-class FSLoader(object):
+class FSLoader(Loader):
 
     """A file system loader of catalogs.
 
@@ -46,9 +47,6 @@ class FSLoader(object):
     directory are recursively explored for catalog files.
 
     """
-
-    current_loader = None
-    current_catalog = None
 
     def __init__(self, root_dir):
         self.root_dir = root_dir
@@ -92,7 +90,3 @@ class FSLoader(object):
                         parent.catalogs.append(catalog)
                     else:
                         self.catalogs[namespace] = catalog
-
-    def select(self, catalog):
-        """Select the catalog of the specified name."""
-        type(self).current_catalog = self.catalogs[catalog]

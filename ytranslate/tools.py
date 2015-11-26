@@ -34,23 +34,26 @@ They can be called to interact with the created object of the
 """
 
 from ytranslate.fsloader import FSLoader
+from ytranslate.loader import Loader
 
-def init(root_dir):
+def init(LoaderClass=FSLoader, **kwargs):
     """Load the catalogs at a specified location.
 
+    Depending on the type of loader, the arguments vary.  If the
+    default LoaderClass is used, the first argument is the root directory.
     The 'root_dir', the parent directory, is sent to the FSLoader
     class which is to create a hierarchy of catalogs.  The parent
     catalogs bear the name of the namespace (that is their
     directory or their filename without the '.yml' extension).
     For instance:
-        init("path/to/translations")
+        init(root_dir="path/to/translations")
 
     Use the 'select' function to then select a catalog.
 
     """
-    fsloader = FSLoader(root_dir)
-    FSLoader.current_loader = fsloader
-    fsloader.load()
+    loader = LoaderClass(**kwargs)
+    FSLoader.current_loader = loader
+    loader.load()
 
 def select(catalog):
     """Select the catalog from the loader.
