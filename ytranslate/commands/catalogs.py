@@ -72,24 +72,32 @@ class CatalogsCommand(BaseCommand):
         loader = FSLoader(root_dir)
         loader.load()
         if args.catalog:
-            catalog = loader.catalogs.get(args.catalog)
-            if catalog is None:
-                print("The catalog of namespace {} cannot be found in " \
-                        "{}".format(repr(catalog), repr(root_dir)))
-                sys.exit(1)
-
-            for address, message in sorted(catalog.messages.items()):
-                if isinstance(message, dict):
-                    display = unicode("")
-                    for entry, value in sorted(message.items()):
-                        display += unicode("\n        {}: {}").format(
-                                entry, value)
-                    message = unicode("{") + display + unicode("\n  }")
-
-                print(unicode("  {}: {}").format(address, message))
+            self.display_catalog(loader, args.catalog)
         elif loader.catalogs:
-            for namespace, catalog in sorted(loader.catalogs.items()):
-                print("  Catalog {} ({} messages)".format(namespace,
-                        len(catalog.messages)))
+            self.display_catalogs(loader)
         else:
             print("No catalog could be found in {}".format(repr(root_dir)))
+
+    def display_catalog(self, loader, catalog):
+        """Display the content of a catalog."""
+        catalog = loader.catalogs.get(catalog)
+        if catalog is None:
+            print("The catalog of namespace {} cannot be found in " \
+                    "{}".format(repr(catalog), repr(root_dir)))
+            sys.exit(1)
+
+        for address, message in sorted(catalog.messages.items()):
+            if isinstance(message, dict):
+                display = unicode("")
+                for entry, value in sorted(message.items()):
+                    display += unicode("\n        {}: {}").format(
+                            entry, value)
+                message = unicode("{") + display + unicode("\n  }")
+
+            print(unicode("  {}: {}").format(address, message))
+
+    def display_catalogs(self, loader):
+        """Display the loaded catalogs."""
+        for namespace, catalog in sorted(loader.catalogs.items()):
+            print("  Catalog {} ({} messages)".format(namespace,
+                    len(catalog.messages)))
