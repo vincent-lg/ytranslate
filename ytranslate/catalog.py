@@ -221,8 +221,8 @@ class Catalog:
 
         You can also alter the message depending on a number
         (singular and plural in English, or a more specific variation
-        in Russian, for instance).  It still remains to be implemented
-        to this day, however.
+        in Russian, for instance).  The full syntax is described
+        in the 'retrieve_count' method.
 
         """
         message = self.messages.get(address)
@@ -231,38 +231,66 @@ class Catalog:
                     "catalog".format(repr(address)))
 
         if count is not None:
-            equal = lambda a, b: a == b
-            greater = lambda a, b: a >= b
-            messages = self.messages.get(address, {})
-            if messages is None:
-                raise ValueError("address {} cannot be found in this " \
-                        "catalog".format(repr(address)))
-            elif not isinstance(messages, dict):
-                raise ValueError("the message at {} has to be " \
-                        "retrieved with a 'count' indicator, though " \
-                        "at this address aren't several values".format(
-                        repr(address)))
-
-            message = None
-            for key in sorted(messages.keys(), reverse=True):
-                value = messages[key]
-                compare = equal
-                if key.endswith("+"):
-                    key = key[:-1]
-                    compare = greater
-
-                if not key.isdigit():
-                    raise ValueError("message {}: {} isn't a valid " \
-                            "number.".format(repr(address), key))
-
-                key = int(key)
-                if compare(count, key):
-                    message = value
-                    break
-
-            if message is None:
-                raise ValueError("address {}: no proper message " \
-                        "to be displayed with a count of {}".format(
-                        repr(address), count))
+            message = self.retrieve_count(address, count, **kwargs)
 
         return message.format(count=count, **kwargs)
+
+    def retrieve_count(self, address, count, **kwargs):
+        """Retrieve a message when a 'count' indicator is present.
+
+        The 'retrieve' method calls 'retrieve_count' if necessary.
+        This method shouldn't be called directly.
+
+        A 'count' indicator can be used to alter the message regarding singular, plural or other rules that may apply to the language depending on a number of items.  Definition a group of message in a catalog is simple:  A new dictionary has to be specified instead of just a message.  For instance:
+            emails:
+                0: You have no email.
+                1: You have one email.
+                2+: You have {count} emails.
+
+        Then you can simply ask the 'retrieve' method to find the proper message according to the 'count' indicator:
+            t("emails", 2)
+            # Which will retrieve the message 'You have 2 emails.'
+
+        This second dictionary defined in YAML must contain only
+        numbers as keys, or a number followed by the '+' sign,
+        which means "either that number of more".  For instance,
+        '5+' means either 5 or more.  This way, you can configure
+        the catalog to different singular and plural rules
+        depending on the language.
+
+        """
+        equal = lambda a, b: a == b
+        greater = lambda a, b: a >= b
+        messages = self.messages.get(address, {})
+        if messages is None:
+            raise ValueError("address {} cannot be found in this " \
+                    "catalog".format(repr(address)))
+        elif not isinstance(messages, dict):
+            raise ValueError("the message at {} has to be " \
+                    "retrieved with a 'count' indicator, though " \
+                    "at this address aren't several values".format(
+                    repr(address)))
+
+        message = None
+        for key in sorted(messages.keys(), reverse=True):
+            value = messages[key]
+            compare = equal
+            if key.endswith("+"):
+                key = key[:-1]
+                compare = greater
+
+            if not key.isdigit():
+                raise ValueError("message {}: {} isn't a valid " \
+                        "number.".format(repr(address), key))
+
+            key = int(key)
+            if compare(count, key):
+                message = value
+                break
+
+        if message is None:
+            raise ValueError("address {}: no proper message " \
+                    "to be displayed with a count of {}".format(
+                    repr(address), count))
+
+        return message
