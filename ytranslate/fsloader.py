@@ -51,7 +51,7 @@ class FSLoader(Loader):
     def __init__(self, root_dir):
         self.root_dir = root_dir
         self.catalogs = {}
-        self.selected_catalog = None
+        self.namespaces = {}
 
     def __repr__(self):
         return "<ytranslate.FSLoader (root={})>".format(repr(self.root_dir))
@@ -59,23 +59,23 @@ class FSLoader(Loader):
     def load(self):
         """Load the catalogs."""
         root_dir = self.root_dir
-        len_root = len(os.path.split(root_dir))
+        len_root = len(root_dir.split(os.sep))
         for base, dirs, files in os.walk(self.root_dir):
-            fullbase = base
             for file in files:
                 if len(file) > 4 and file.endswith(".yml"):
-                    fullname = os.path.join(fullbase, file)
+                    fullname = os.path.join(base, file)
                     kwargs = {}
+
+                    # If Python 3, enforce the encoding to 'utf-8'
                     if sys.version_info.major == 3:
                         kwargs["encoding"] = "utf-8"
 
                     try:
-                        file = open(fullname, "r", **kwargs)
+                        with open(fullname, "r", **kwargs) as file:
+                            data = file.read()
                     except IOError as e:
                         raise ValueError("cannot load the {} file: " \
                                 "{}".format(repr(fullname), e))
-                    else:
-                        data = file.read()
 
                     namespace = ".".join(fullname[:-4].split(
                             os.sep)[len_root + 1:])
@@ -92,6 +92,6 @@ class FSLoader(Loader):
                         parent = self.catalogs[parent]
                         parent.copy_from(catalog,
                                 namespace=namespace)
-                        parent.catalogs.append(catalog)
                     else:
                         self.catalogs[namespace] = catalog
+                    self.namespaces[namespace] = catalog

@@ -90,7 +90,6 @@ class Catalog:
     def __init__(self, name):
         self.name = name
         self.messages = {}
-        self.catalogs = []
 
     def __repr__(self):
         return "<ytranslate.Catalog {}>".format(repr(self.name))
