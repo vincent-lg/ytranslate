@@ -56,6 +56,14 @@ class TestFSLoader(unittest.TestCase):
     def setUp(self):
         self.files = {}
 
+    def open(self):
+        """Return a mock of the open function."""
+        address_open = "builtins.open"
+        if sys.version_info.major == 2:
+            address_open = "ytranslate.fsloader.open"
+
+        return mock.patch(address_open, mock.mock_open())
+
     def mock_open(self, name, *args, **kwargs):
         """Open a mock file at the proper location.
 
@@ -81,16 +89,11 @@ class TestFSLoader(unittest.TestCase):
                         view: Affichage"""),
         }
 
-        address_open = "builtins.open"
-        if sys.version_info.major == 2:
-            address_open = "ytranslate.fsloader.open"
-
-        with mock.patch(address_open, mock.mock_open()) as mock_open:
+        with self.open() as mock_open:
+            mock_open.side_effect = self.mock_open
             mock_walk.return_value = [
                 ["test", [], ["en.yml", "fr.yml"]],
             ]
-
-            mock_open.side_effect = self.mock_open
 
             # Creates the FSLoader object
             loader = FSLoader("unknown")
