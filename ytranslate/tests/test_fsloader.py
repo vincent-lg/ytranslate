@@ -78,7 +78,15 @@ class TestFSLoader(unittest.TestCase):
 
     @mock.patch.object(fs_os, "walk")
     def test_files(self, mock_walk):
-        """Simple test with only files."""
+        """Simple test with only files.
+
+        The purpose of this test is to ensure that first-level
+        catalogs are corectly interpreted.  These catalogs are files
+        directly in the given directory.  Their name becomes their
+        namespace without the '.yml' extension.  Example: 'en.yml'
+        is stored in the 'en' namespace.
+
+        """
         # Initialize the files
         self.files = {
                 "test/en.yml": dedent("""\
@@ -111,3 +119,79 @@ class TestFSLoader(unittest.TestCase):
             self.assertEqual(fr.retrieve("new"), u"Nouveau")
             self.assertEqual(en.retrieve("view"), u"View")
             self.assertEqual(fr.retrieve("view"), u"Affichage")
+
+    @mock.patch.object(fs_os, "walk")
+    def test_directories(self, mock_walk):
+        """Test with files and directories.
+
+        This test checks the interpretation of second-level catalogs,
+        that is, when a full structure of directories is used to
+        represent namespaces.  In this case, the namespaces are
+        the names of directories excluding the first one, which
+        represents the main namespace.  For instance,
+        here's a possible directory structure:
+            en/
+                ui/
+                    window.yml
+                    errors.yml
+                    ...
+
+        """
+        # Initialize the files
+        directories = [
+            ["example", ["en", "fr"], []],
+            ["example/en", ["ui", "message"], []],
+            ["example/en/ui", [], ["window.yml", "errors.yml"]],
+            ["example/en/message", [], ["notification.yml"]],
+            ["example/fr", ["ui", "message"], []],
+            ["example/fr/ui", [], ["window.yml", "errors.yml"]],
+            ["example/fr/message", [], ["notification.yml"]],
+        ]
+
+        for i, elt in enumerate(directories):
+            directories[i][0] = elt[0].replace("/", os.sep)
+
+        self.files = {
+                "example/en/ui/window.yml": dedent("""\
+                        title: Ytranslator
+                        buttons:
+                            exit: Exit
+                            quit: Quit"""),
+                "example/en/ui/errors.yml": dedent("""\
+                        syntax: syntax error"""),
+                "example/en/message/notification.yml": dedent("""\
+                        email: You have some unread e-mails"""),
+                "example/fr/ui/window.yml": dedent("""\
+                        title: Ytraducteur
+                        buttons:
+                            exit: Fermer
+                            quit: Quitter"""),
+                "example/fr/ui/errors.yml": dedent("""\
+                        syntax: erreur de syntaxe"""),
+                "example/fr/message/notification.yml": dedent("""\
+                        email: Vous avez des messages non lus"""),
+        }
+
+        with self.open() as mock_open:
+            mock_open.side_effect = self.mock_open
+            mock_walk.return_value = directories
+
+            # Creates the FSLoader object
+            loader = FSLoader("unknown")
+            loader.load()
+
+            # Check the catalogs' proper loading
+            self.assertEqual(len(loader.catalogs), 2)
+            self.assertIn("en", loader.catalogs)
+            self.assertIn("fr", loader.catalogs)
+
+            # Check the catalog's content
+            en = loader.catalogs["en"]
+            fr = loader.catalogs["fr"]
+            self.assertEqual(en.retrieve("ui.window.title"), u"Ytranslator")
+            self.assertEqual(en.retrieve("ui.window.buttons.quit"), u"Quit")
+            self.assertEqual(en.retrieve("ui.errors.syntax"), u"syntax error")
+            self.assertEqual(fr.retrieve("ui.window.title"), u"Ytraducteur")
+            self.assertEqual(fr.retrieve("ui.window.buttons.quit"), u"Quitter")
+            self.assertEqual(fr.retrieve("ui.errors.syntax"),
+                    u"erreur de syntaxe")
