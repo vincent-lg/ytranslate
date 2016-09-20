@@ -116,7 +116,7 @@ class Catalog:
     def read_YAML(self, content):
         """Fill the catalog using this YAML content.
 
-        Te content must be a str containing YAML code that should
+        The content must be a str containing YAML code that should
         represent a dictionary.  The whole dictionary will be integrated
         in the 'messages' dictionary.  Namespaces can be deefined
         in the YAML document, but they will be "flattened out".
@@ -150,7 +150,8 @@ class Catalog:
         if isinstance(data, dict):
             self.read_dictionary(data)
         else:
-            raise ValueError("the YAML content doesn't describe a dictionary")
+            raise ValueError("catalog {}, the YAML content doesn't " \
+                    "describe a dictionary".format(self.name))
 
     def copy_from(self, catalog, namespace=""):
         """Copy the messages of the catalog provided as a parameter.
@@ -165,7 +166,7 @@ class Catalog:
 
             self.messages[name] = message
 
-    def write_dictionary(self):
+    def write_dictionary(self, root=""):
         """Write the nested dictionary.
 
         Namespaces are used to create a nested dictionary.  The
@@ -175,11 +176,20 @@ class Catalog:
         process is exactly the opposite of the 'read_dictionary'
         method.
 
+        If a namespace is specified as a root, only select this namespace
+        in the list of keys, returning the dictionary as if it were
+        a root.
+
         """
         keys = sorted(self.messages.keys())
+        if root:
+            keys = [key for key in keys if key.startswith(root + ".")]
+
         nested = {}
         for key in keys:
             value = self.messages[key]
+            if root:
+                key = key[len(root) + 1:]
 
             # Split the key in namespaces separated by '.'
             last_namespace = key.split(".")[-1]
@@ -195,9 +205,9 @@ class Catalog:
 
         return nested
 
-    def write_YAML(self):
+    def write_YAML(self, root=""):
         """Return the nested content as YAML."""
-        nested = self.write_dictionary()
+        nested = self.write_dictionary(root)
         return yaml.safe_dump(nested, indent=4, width=79,
                 default_flow_style=False)
 

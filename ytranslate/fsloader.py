@@ -95,3 +95,78 @@ class FSLoader(Loader):
                     else:
                         self.catalogs[namespace] = catalog
                     self.namespaces[namespace] = catalog
+
+    def update_catalog(self, catalog, model, missing="???"):
+        """Update the given catalog.
+
+        The catalog specified as a model is used to fill the information
+        out, if not provided in the first catalog.  This method can
+        be used to create the first catalog or to update it.
+
+        Return the number of updated messages.
+
+        """
+        nb = 0
+        model = self.catalogs[model]
+        if catalog not in self.catalogs:
+            catalog = Catalog(catalog)
+            self.catalogs[catalog.name] = catalog
+        else:
+            catalog = self.catalogs[catalog]
+
+        # Write the catalog with missing information
+        for key, value in model.messages.items():
+            replace = missing
+            if isinstance(value, dict):
+                replace = value.copy()
+                for nkey in replace.keys():
+                    replace[nkey] = missing
+
+            if key not in catalog.messages:
+                nb += 1
+                catalog.messages[key] = replace
+
+        # Finally, write the updated (or newly-created) catalog
+        self.save_catalog(catalog)
+
+        return nb
+
+    def save(self):
+        """Save all catalogs in the file system."""
+        for namespace, catalog in self.namespaces.items():
+            self.save_catalog(catalog)
+
+    def save_catalog(self, catalog):
+        """Save the specified catalog in the file system.
+
+        Each catalog stores, in its name, the full path leading to
+        it.  Assuming the current directory has remained the same
+        and the directory structure hasn't significantly changed,
+        this method should be able to access the proper
+        file and write into it.  An IOError exception is bound to
+        be raised if things didn't work for some reason.
+
+        """
+        name = catalog.name
+        parent_directory = os.path.join(self.root_dir, name)
+        kwargs = {}
+        # If Python 3, enforce the encoding to 'utf-8'
+        if sys.version_info.major == 3:
+            kwargs["encoding"] = "utf-8"
+
+        for namespace in self.namespaces.keys():
+            if namespace:
+                fullname = os.path.join(parent_directory,
+                        namespace.replace(".", os.path.sep) + ".yml")
+            else:
+                parent_directory = self.root_dir
+                fullname = os.path.join(parent_directory, name + ".yml")
+
+            # Create the directory structure if necessary
+            parent = os.path.split(fullname)[0]
+            if not os.path.exists(parent):
+                os.makedirs(parent)
+
+            yaml = catalog.write_YAML(namespace)
+            with open(fullname, "w", **kwargs) as file:
+                file.write(yaml)
