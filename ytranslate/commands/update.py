@@ -27,17 +27,49 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-"""Module containing the Command class, described below."""
+"""Module containing the UpdateCommand class, described below."""
+
+from __future__ import print_function
+import os
+import os.path
+import sys
 
 from ytranslate.commands.base import BaseCommand
-from ytranslate.commands.catalogs import CatalogsCommand
-from ytranslate.commands.update import UpdateCommand
+from ytranslate.fsloader import FSLoader
 
-class Command(BaseCommand):
+class UpdateCommand(BaseCommand):
 
-    """Main command, parents of them all."""
+    """Commands 'update'.
 
-    def __init__(self):
-        BaseCommand.__init__(self)
-        self.add_subcommand(CatalogsCommand)
-        self.add_subcommand(UpdateCommand)
+    This command updates a given catalog with a default model.
+
+    """
+
+    name = "update"
+
+    def __init__(self, parser=None):
+        BaseCommand.__init__(self, parser)
+        parser.add_argument("directory",
+                help="the path to the directory containing the catalogs")
+        parser.add_argument("catalog", nargs='?',
+                help="the catalog name to be created or updated")
+        parser.add_argument("-m", "--model", nargs='?',
+                default="en", help="the model catalog to be used")
+
+    def execute(self, args):
+        """Execute the command."""
+        root_dir = args.directory
+        if not os.path.exists(root_dir):
+            print("The {} directory doesn't exist".format(repr(root_dir)),
+                    file=sys.stderr)
+            sys.exit(1)
+        elif not os.path.isdir(root_dir):
+            print("The {} path doesn't lead to a directory".format(
+                    repr(root_dir)), file=sys.stderr)
+            sys.exit(1)
+
+        loader = FSLoader(root_dir)
+        loader.load()
+        nb = loader.update_catalog(args.catalog, args.model)
+        print("Successfully updated the '{}' catalog ({})".format(
+                args.catalog, nb))
