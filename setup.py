@@ -7,7 +7,7 @@ through creating and updating losely-defined YAML catalogs.
 
 setup(
     name = "ytranslate",
-    version = "0.1",
+    version = "0.2",
     packages = find_packages(),
     install_requires = ['pyyaml>=3'],
     description = DESCRIPTION,
