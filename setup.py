@@ -7,7 +7,7 @@ through creating and updating losely-defined YAML catalogs.
 
 setup(
     name = "ytranslate",
-    version = "0.2.1",
+    version = "0.3",
     packages = find_packages(),
     install_requires = ['pyyaml>=3'],
     description = DESCRIPTION,
@@ -17,5 +17,5 @@ setup(
     keywords = ['translation', 'translate', 'yaml', 'yml'],
     entry_points = {
         'console_scripts': ['ytranslate=ytranslate.commands.main:main'],
-    }
+    },
 )

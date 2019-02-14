@@ -282,7 +282,7 @@ class Catalog:
                     repr(address)))
 
         message = None
-        for key in sorted(messages.keys(), reverse=True):
+        for key in reversed(list(messages.keys())):
             value = messages[key]
             compare = equal
             if key.endswith("+"):
